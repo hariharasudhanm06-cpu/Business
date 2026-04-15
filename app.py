@@ -126,6 +126,24 @@ def update_status(order_id, status):
         if order["id"] == order_id:
             order["status"] = status
 
+            # 🔔 WhatsApp notification
+            from twilio.rest import Client
+
+            account_sid = "ACea2318dc8015a889ced5588acc1093a6"
+            auth_token = "ad7977430cb5b7424736af627cf76133"
+
+            client = Client(account_sid, auth_token)
+
+            message = client.messages.create(
+                from_='whatsapp:+14155238886',
+                body=f"""📦 Order Update
+
+Status: {order['status']}
+Customer: {order['name']}
+""",
+                to='whatsapp:+918248005899'
+            )
+
     save_orders(orders)
     return redirect("/admin")
 
