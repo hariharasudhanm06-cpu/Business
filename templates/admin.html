@@ -1,0 +1,62 @@
+<table border="1">
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Phone</th>
+<th>Address</th>
+<th>Shirts</th>
+<th>Assigned To</th>
+<th>Distance</th>
+<th>Total Price</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+{% for order in orders %}
+<tr>
+<td>{{ order.id }}</td>
+<td>{{ order.name }}</td>
+<td>{{ order.phone }}</td>
+<td>{{ order.address }}</td>
+<td>{{ order.shirts }}</td>
+<td>{{ order.assigned_to }}</td>
+<td>{{ order.distance }} KM</td>
+<td>₹{{ order.total_price }}</td>
+<td>{{ order.status }}</td>
+
+<td>
+<a href="/update_status/{{order.id}}/Clothes Collected">Collect</a> |
+<a href="/update_status/{{order.id}}/Ironing Started">Iron</a> |
+<a href="/update_status/{{order.id}}/Out for Delivery">Out</a> |
+<a href="/update_status/{{order.id}}/Delivered">Done</a>
+</td>
+</tr>
+{% endfor %}
+</table>
+
+<script>
+if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+function showNotification() {
+    new Notification("📦 New Order வந்துள்ளது!");
+}
+</script>
+
+<script>
+let lastOrderCount = {{ orders|length }};
+
+setInterval(() => {
+    fetch('/admin')
+    .then(res => res.text())
+    .then(data => {
+        let newCount = (data.match(/<tr>/g) || []).length - 1;
+
+        if (newCount > lastOrderCount) {
+            showNotification();
+            lastOrderCount = newCount;
+        }
+    });
+}, 5000);
+</script>
