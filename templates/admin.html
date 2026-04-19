@@ -1,38 +1,96 @@
-<table border="1">
-<tr>
-<th>ID</th>
-<th>Name</th>
-<th>Phone</th>
-<th>Address</th>
-<th>Shirts</th>
-<th>Assigned To</th>
-<th>Distance</th>
-<th>Total Price</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 15px;
+            background: #f5f5f5;
+        }
 
-{% for order in orders %}
-<tr>
-<td>{{ order.id }}</td>
-<td>{{ order.name }}</td>
-<td>{{ order.phone }}</td>
-<td>{{ order.address }}</td>
-<td>{{ order.shirts }}</td>
-<td>{{ order.assigned_to }}</td>
-<td>{{ order.distance }} KM</td>
-<td>₹{{ order.total_price }}</td>
-<td>{{ order.status }}</td>
+        h2 {
+            text-align: center;
+        }
 
-<td>
-<a href="/update_status/{{order.id}}/Clothes Collected">Collect</a> |
-<a href="/update_status/{{order.id}}/Ironing Started">Iron</a> |
-<a href="/update_status/{{order.id}}/Out for Delivery">Out</a> |
-<a href="/update_status/{{order.id}}/Delivered">Done</a>
-</td>
-</tr>
-{% endfor %}
-</table>
+        .table-box {
+            overflow-x: auto;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #222;
+            color: white;
+        }
+
+        a {
+            text-decoration: none;
+            color: blue;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>📦 Orders Dashboard</h2>
+
+<div class="table-box">
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Address</th>
+            <th>Shirts</th>
+            <th>Assigned To</th>
+            <th>Distance</th>
+            <th>Delivery Charge</th>
+            <th>Total Price</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.name }}</td>
+            <td>{{ order.phone }}</td>
+            <td>{{ order.address }}</td>
+            <td>{{ order.shirts }}</td>
+            <td>{{ order.assigned_to }}</td>
+            <td>{{ order.distance }} KM</td>
+            <td>₹{{ order.delivery_charge }}</td>
+            <td>₹{{ order.total_price }}</td>
+            <td>{{ order.payment_status }}</td>
+            <td>{{ order.status }}</td>
+
+            <td>
+                <a href="/update_status/{{order.id}}/Clothes Collected">Collect</a> |
+                <a href="/update_status/{{order.id}}/Ironing Started">Iron</a> |
+                <a href="/update_status/{{order.id}}/Out for Delivery">Out</a> |
+                <a href="/update_status/{{order.id}}/Delivered">Done</a> |
+                <a href="/update_payment/{{order.id}}">Mark Paid</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 
 <script>
 if (Notification.permission !== "granted") {
@@ -60,3 +118,6 @@ setInterval(() => {
     });
 }, 5000);
 </script>
+
+</body>
+</html>
