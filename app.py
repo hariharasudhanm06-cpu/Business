@@ -18,8 +18,8 @@ PRICE_PER_SHIRT = 15
 DELIVERY_PER_KM = 10
 
 # Twilio config
-ACCOUNT_SID = "ACea2318dc8015a889ced5588acc1093a6"
-AUTH_TOKEN = "ad7977430cb5b7424736af627cf76133"
+ACCOUNT_SID = "YOUR_ACCOUNT_SID"
+AUTH_TOKEN = "YOUR_NEW_AUTH_TOKEN"
 TWILIO_WHATSAPP_NUMBER = "whatsapp:+14155238886"
 ADMIN_WHATSAPP_NUMBER = "whatsapp:+918248005899"
 
@@ -95,7 +95,10 @@ def home():
             return "Invalid input. Please allow location and enter valid details."
 
         nearest_person, distance = find_nearest_ironman(user_lat, user_lon)
-        total_price = (shirts * PRICE_PER_SHIRT) + (distance * DELIVERY_PER_KM)
+
+        # optional delivery cap
+        delivery_charge = min(round(distance * DELIVERY_PER_KM, 2), 50)
+        total_price = (shirts * PRICE_PER_SHIRT) + delivery_charge
 
         orders = load_orders()
 
@@ -106,15 +109,16 @@ def home():
             "address": request.form["address"],
             "shirts": shirts,
             "distance": round(distance, 2),
+            "delivery_charge": delivery_charge,
             "total_price": round(total_price, 2),
             "status": "Order Placed",
-            "assigned_to": nearest_person["name"]
+            "assigned_to": nearest_person["name"],
+            "payment_status": "Pending"
         }
 
         orders.append(data)
         save_orders(orders)
 
-        # Admin notification
         admin_message = f"""📦 New Order!
 
 Customer: {data['name']}
@@ -123,11 +127,13 @@ Address: {data['address']}
 Shirts: {data['shirts']}
 Assigned To: {data['assigned_to']}
 Distance: {data['distance']} KM
+Delivery Charge: ₹{data['delivery_charge']}
 Total: ₹{data['total_price']}
+Payment: {data['payment_status']}
 """
         send_whatsapp_message(admin_message, ADMIN_WHATSAPP_NUMBER)
 
-        return f"✅ Order placed! Assigned to {nearest_person['name']} | ₹{round(total_price, 2)}"
+        return redirect(f"/payment/{data['id']}")
 
     return render_template("index.html")
 
@@ -136,6 +142,43 @@ Total: ₹{data['total_price']}
 def admin():
     orders = load_orders()
     return render_template("admin.html", orders=orders)
+
+
+@app.route("/payment/<int:order_id>")
+def payment(order_id):
+    orders = load_orders()
+
+    for order in orders:
+        if order["id"] == order_id:
+            return render_template(
+                "payment.html",
+                total_price=order["total_price"],
+                order_id=order["id"]
+            )
+
+    return "Order not found"
+
+
+@app.route("/update_payment/<int:order_id>")
+def update_payment(order_id):
+    orders = load_orders()
+
+    for order in orders:
+        if order["id"] == order_id:
+            order["payment_status"] = "Paid"
+
+            payment_message = f"""💳 Payment Update
+
+Customer: {order['name']}
+Order ID: {order['id']}
+Payment Status: {order['payment_status']}
+Total: ₹{order['total_price']}
+"""
+            send_whatsapp_message(payment_message, ADMIN_WHATSAPP_NUMBER)
+            break
+
+    save_orders(orders)
+    return redirect("/admin")
 
 
 @app.route("/update_status/<int:order_id>/<status>")
@@ -151,6 +194,7 @@ def update_status(order_id, status):
 Status: {order['status']}
 Customer: {order['name']}
 Assigned To: {order['assigned_to']}
+Payment: {order.get('payment_status', 'Pending')}
 """
             send_whatsapp_message(status_message, ADMIN_WHATSAPP_NUMBER)
             break
