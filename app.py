@@ -1,12 +1,11 @@
-import requests
 import math
 import json
+import requests
 from flask import Flask, render_template, request, redirect
-from twilio.rest import Client
 
 app = Flask(__name__)
 
-# Iron men locations
+# Iron men locations - Rajapalayam area
 iron_men = [
     {"name": "Rajapalayam Bus Stand", "lat": 9.42724, "lon": 77.53035},
     {"name": "Rajapalayam Railway Station", "lat": 9.4248, "lon": 77.5530},
@@ -18,17 +17,15 @@ iron_men = [
 PRICE_PER_SHIRT = 15
 DELIVERY_PER_KM = 10
 
-# Twilio config
-ACCOUNT_SID = "YOUR_ACCOUNT_SID"
-AUTH_TOKEN = "YOUR_NEW_AUTH_TOKEN"
-TWILIO_WHATSAPP_NUMBER = "whatsapp:+14155238886"
-ADMIN_WHATSAPP_NUMBER = "whatsapp:+918248005899"
+# Telegram config
+TELEGRAM_BOT_TOKEN = "YOUR_NEW_TELEGRAM_BOT_TOKEN"
+TELEGRAM_CHAT_ID = "YOUR_CHAT_ID"
 
 
 def load_orders():
     orders = []
     try:
-        with open("orders.json", "r") as f:
+        with open("orders.json", "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line:
@@ -39,9 +36,9 @@ def load_orders():
 
 
 def save_orders(orders):
-    with open("orders.json", "w") as f:
+    with open("orders.json", "w", encoding="utf-8") as f:
         for order in orders:
-            f.write(json.dumps(order) + "\n")
+            f.write(json.dumps(order, ensure_ascii=False) + "\n")
 
 
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -73,16 +70,16 @@ def find_nearest_ironman(user_lat, user_lon):
     return nearest, min_distance
 
 
-def send_whatsapp_message(body, to_number):
+def send_telegram_message(msg):
     try:
-        client = Client(ACCOUNT_SID, AUTH_TOKEN)
-        client.messages.create(
-            from_=TWILIO_WHATSAPP_NUMBER,
-            body=body,
-            to=to_number
-        )
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        data = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": msg
+        }
+        requests.post(url, data=data, timeout=10)
     except Exception as e:
-        print("WhatsApp send error:", e)
+        print("Telegram Error:", e)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -97,7 +94,7 @@ def home():
 
         nearest_person, distance = find_nearest_ironman(user_lat, user_lon)
 
-        # optional delivery cap
+        # Delivery charge cap = ₹50 max
         delivery_charge = min(round(distance * DELIVERY_PER_KM, 2), 50)
         total_price = (shirts * PRICE_PER_SHIRT) + delivery_charge
 
@@ -110,7 +107,7 @@ def home():
             "address": request.form["address"],
             "shirts": shirts,
             "distance": round(distance, 2),
-            "delivery_charge": delivery_charge,
+            "delivery_charge": round(delivery_charge, 2),
             "total_price": round(total_price, 2),
             "status": "Order Placed",
             "assigned_to": nearest_person["name"],
@@ -120,6 +117,7 @@ def home():
         orders.append(data)
         save_orders(orders)
 
+        # Telegram notification
         admin_message = f"""📦 New Order!
 
 Customer: {data['name']}
@@ -132,7 +130,7 @@ Delivery Charge: ₹{data['delivery_charge']}
 Total: ₹{data['total_price']}
 Payment: {data['payment_status']}
 """
-        send_whatsapp_message(admin_message, ADMIN_WHATSAPP_NUMBER)
+        send_telegram_message(admin_message)
 
         return redirect(f"/payment/{data['id']}")
 
@@ -150,7 +148,7 @@ def payment(order_id):
     orders = load_orders()
 
     for order in orders:
-        if order["id"] == order_id:
+        if order.get("id") == order_id:
             return render_template(
                 "payment.html",
                 total_price=order["total_price"],
@@ -165,7 +163,7 @@ def update_payment(order_id):
     orders = load_orders()
 
     for order in orders:
-        if order["id"] == order_id:
+        if order.get("id") == order_id:
             order["payment_status"] = "Paid"
 
             payment_message = f"""💳 Payment Update
@@ -175,7 +173,7 @@ Order ID: {order['id']}
 Payment Status: {order['payment_status']}
 Total: ₹{order['total_price']}
 """
-            send_whatsapp_message(payment_message, ADMIN_WHATSAPP_NUMBER)
+            send_telegram_message(payment_message)
             break
 
     save_orders(orders)
@@ -187,7 +185,7 @@ def update_status(order_id, status):
     orders = load_orders()
 
     for order in orders:
-        if order["id"] == order_id:
+        if order.get("id") == order_id:
             order["status"] = status
 
             status_message = f"""📦 Order Update
@@ -197,7 +195,7 @@ Customer: {order['name']}
 Assigned To: {order['assigned_to']}
 Payment: {order.get('payment_status', 'Pending')}
 """
-            send_whatsapp_message(status_message, ADMIN_WHATSAPP_NUMBER)
+            send_telegram_message(status_message)
             break
 
     save_orders(orders)
