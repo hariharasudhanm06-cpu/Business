@@ -1,26 +1,138 @@
-<form method="POST">
-  Name: <input type="text" name="name"><br><br>
-  Phone: <input type="text" name="phone"><br><br>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Iron Service</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 15px;
+            background: #f5f5f5;
+        }
 
-  Address:<br>
-  <textarea name="address"></textarea><br><br>
+        .box {
+            background: white;
+            max-width: 450px;
+            margin: auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
 
-  Shirts: <input type="number" name="shirts"><br><br>
+        h2 {
+            text-align: center;
+        }
 
-  Distance (KM): <input type="number" name="distance"><br><br>
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
 
-  <button type="submit">Place Order</button>
+        button {
+            background: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
 
+        .secondary-btn {
+            background: #007bff;
+        }
 
-  <input type="hidden" name="lat" id="lat">
-  <input type="hidden" name="lon" id="lon">
+        .info {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+        }
 
-</form>
+        .location-box {
+            background: #eef7ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>👕 Ironing Service</h2>
+
+    <form method="POST">
+        <label>Name</label>
+        <input type="text" name="name" required>
+
+        <label>Phone</label>
+        <input type="text" name="phone" required>
+
+        <label>Address</label>
+        <textarea name="address" id="address" required></textarea>
+
+        <div class="location-box">
+            <div class="info" id="locationStatus">Location not selected</div>
+
+            <button type="button" onclick="useMyLocation()">Use My Location</button>
+
+            <button type="button" class="secondary-btn" onclick="chooseLocation()">
+                Choose My Location
+            </button>
+        </div>
+
+        <label>Number of Shirts</label>
+        <input type="number" name="shirts" required>
+
+        <!-- Hidden location fields -->
+        <input type="hidden" name="lat" id="lat">
+        <input type="hidden" name="lon" id="lon">
+
+        <button type="submit">Place Order</button>
+    </form>
+</div>
 
 <script>
-navigator.geolocation.getCurrentPosition(function(position) {
-    document.getElementById("lat").value = position.coords.latitude;
-    document.getElementById("lon").value = position.coords.longitude;
-});
+function useMyLocation() {
+    if (!navigator.geolocation) {
+        alert("Geolocation not supported in this browser.");
+        return;
+    }
+
+    document.getElementById("locationStatus").innerText = "Fetching your current location...";
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            document.getElementById("lat").value = lat;
+            document.getElementById("lon").value = lon;
+
+            document.getElementById("locationStatus").innerText =
+                "Current location selected: " + lat.toFixed(5) + ", " + lon.toFixed(5);
+
+            // optional: show lat/lon inside address if empty
+            const addressBox = document.getElementById("address");
+            if (addressBox.value.trim() === "") {
+                addressBox.value = "Current Location (" + lat.toFixed(5) + ", " + lon.toFixed(5) + ")";
+            }
+        },
+        function(error) {
+            alert("Location access denied or unavailable.");
+            document.getElementById("locationStatus").innerText = "Location not selected";
+        }
+    );
+}
+
+function chooseLocation() {
+    alert("Map will open. Long press / choose your location, then copy coordinates manually for now.");
+
+    window.open("https://www.google.com/maps", "_blank");
+}
 </script>
+
+</body>
+</html>
