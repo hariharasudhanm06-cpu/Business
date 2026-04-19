@@ -7,9 +7,11 @@ app = Flask(__name__)
 
 # Iron men locations
 iron_men = [
-    {"name": "Ravi", "lat": 9.9252, "lon": 78.1198},
-    {"name": "Kumar", "lat": 9.9300, "lon": 78.1300},
-    {"name": "Suresh", "lat": 9.9200, "lon": 78.1100}
+    {"name": "Rajapalayam Bus Stand", "lat": 9.42724, "lon": 77.53035},
+    {"name": "Rajapalayam Railway Station", "lat": 9.4248, "lon": 77.5530},
+    {"name": "Government Hospital Rajapalayam", "lat": 9.4510, "lon": 77.5600},
+    {"name": "PACR Area", "lat": 9.4342, "lon": 77.5676},
+    {"name": "Rajapalayam Town Center", "lat": 9.45296, "lon": 77.55556}
 ]
 
 PRICE_PER_SHIRT = 15
